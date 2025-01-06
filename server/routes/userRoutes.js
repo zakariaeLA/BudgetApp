@@ -108,4 +108,22 @@ router.post("/argent", (req, res) => {
   );
 });
 
+router.get("/argent/:id", (req, res) => {
+  const { id } = req.params;
+
+  const sql = "SELECT * FROM argent WHERE idutilisateur = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      return res
+        .status(500)
+        .send("Erreur lors de la récupération des données.");
+    }
+    if (results.length > 0) {
+      res.json(results[0]); // Renvoyer les données de l'utilisateur
+    } else {
+      res.status(404).send("Aucune donnée trouvée.");
+    }
+  });
+});
+
 module.exports = router;
