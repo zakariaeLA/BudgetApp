@@ -126,4 +126,119 @@ router.get("/argent/:id", (req, res) => {
   });
 });
 
+router.get("/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM utilisateur WHERE id = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("Erreur SQL :", err);
+      return res
+        .status(500)
+        .send("Erreur lors de la récupération des données.");
+    }
+    console.log("Résultats de la requête :", results);
+    if (results.length > 0) {
+      res.json(results[0]);
+    } else {
+      res.status(404).send("Utilisateur non trouvé.");
+    }
+  });
+});
+
+router.put("/:id", (req, res) => {
+  const { id } = req.params;
+  const { nom, prenom, email, totalArgent, salaire, budget, epargne } =
+    req.body;
+
+  const sql =
+    "UPDATE utilisateur SET nom = ?, prenom = ?, email = ?, totalArgent = ?, salaire = ?, budget = ?, epargne = ? WHERE id = ?";
+  db.query(
+    sql,
+    [nom, prenom, email, totalArgent, salaire, budget, epargne, id],
+    (err, result) => {
+      if (err) {
+        return res
+          .status(500)
+          .send("Erreur lors de la mise à jour des données.");
+      }
+      res.json({ message: "Informations mises à jour avec succès !" });
+    }
+  );
+});
+
+router.get("/users/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = `
+      SELECT utilisateur.*, 
+             IFNULL(argent.totalargent, 0) AS totalargent,
+             argent.salaire, 
+             argent.budget, 
+             argent.epargne
+      FROM utilisateur
+      LEFT JOIN argent ON utilisateur.id = argent.idutilisateur
+      WHERE utilisateur.id = ?`;
+
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      return res
+        .status(500)
+        .send("Erreur lors de la récupération des données.");
+    }
+    if (results.length > 0) {
+      res.json(results[0]);
+    } else {
+      res.status(404).send("Utilisateur non trouvé.");
+    }
+  });
+});
+
+router.put("/users/:id", (req, res) => {
+  const { id } = req.params;
+  const {
+    nom,
+    prenom,
+    email,
+    totalArgent,
+    salaire,
+    budget,
+    epargne,
+    situationFamiliale,
+    nbrEnfants,
+    ville,
+  } = req.body;
+
+  const sql = `
+        UPDATE utilisateur 
+        SET nom = ?, prenom = ?, email = ?, situationFamiliale = ?, nbrEnfants = ?, ville = ? 
+        WHERE id = ?`;
+  const sqlArgent = `
+        UPDATE argent 
+        SET totalArgent = ?, salaire = ?, budget = ?, epargne = ? 
+        WHERE idutilisateur = ?`;
+
+  db.query(
+    sql,
+    [nom, prenom, email, situationFamiliale, nbrEnfants, ville, id],
+    (err) => {
+      if (err) {
+        return res
+          .status(500)
+          .send("Erreur lors de la mise à jour des données.");
+      }
+      db.query(
+        sqlArgent,
+        [totalArgent, salaire, budget, epargne, id],
+        (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .send("Erreur lors de la mise à jour des données financières.");
+          }
+          res.json({ message: "Informations mises à jour avec succès !" });
+        }
+      );
+    }
+  );
+});
+
 module.exports = router;
